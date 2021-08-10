@@ -18,8 +18,13 @@ fn bench_mul_add(c: &mut Criterion) {
     let mut a = Fr::rand(rng);
     let other = Fr::rand(rng);
     let rest = Fr::rand(rng);
+    use std::ops::MulAssign;
+    use std::ops::AddAssign;
 
-    c.bench_function("mul_add", |b| b.iter(|| {a.mul_add_assign(&other, &rest) }));
+    let mut group = c.benchmark_group("mul_add");
+    group.bench_function("assign", |b| b.iter(|| {a.mul_assign(other); a.add_assign(rest) }));
+    group.bench_function("raw", |b| b.iter(|| {black_box( a* other + rest);}));
+    group.bench_function("michele", |b| b.iter(|| {a.mul_add_assign(&other, &rest)}));
 
 }
 
