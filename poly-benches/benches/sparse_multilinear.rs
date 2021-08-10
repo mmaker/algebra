@@ -1,7 +1,7 @@
 #[macro_use]
 extern crate criterion;
 
-use ark_ff::Field;
+use ark_ff::{Field, PrimeField};
 use ark_poly::{MultilinearExtension, SparseMultilinearExtension};
 use ark_std::ops::Range;
 use ark_std::test_rng;
@@ -9,6 +9,19 @@ use ark_test_curves::bls12_381;
 use criterion::{black_box, BenchmarkId, Criterion};
 
 const NUM_VARIABLES_RANGE: Range<usize> = 12..23;
+
+
+fn bench_mul_add(c: &mut Criterion) {
+    use bls12_381::Fr;
+    use ark_std::UniformRand;
+    let rng = &mut test_rng();
+    let mut a = Fr::rand(rng);
+    let other = Fr::rand(rng);
+    let rest = Fr::rand(rng);
+
+    c.bench_function("mul_add", |b| b.iter(|| {a.mul_add_assign(&other, &rest) }));
+
+}
 
 fn arithmetic_op_bench<F: Field>(c: &mut Criterion) {
     let mut rng = test_rng();
@@ -87,5 +100,5 @@ fn bench_bls381(c: &mut Criterion) {
     evaluation_op_bench::<bls12_381::Fr>(c);
 }
 
-criterion_group!(benches, bench_bls381);
+criterion_group!(benches, bench_mul_add);
 criterion_main!(benches);

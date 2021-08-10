@@ -670,6 +670,7 @@ mod no_std_tests {
         assert_eq!(expected, got);
     }
 
+
     #[test]
     fn test_batch_inversion() {
         let mut random_coeffs = Vec::<Fr>::new();

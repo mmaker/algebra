@@ -62,7 +62,7 @@ macro_rules! impl_field_mul_add_assign {
     ($limbs:expr) => {
         #[inline]
         #[ark_ff_asm::unroll_for_loops]
-        fn mul_add_assign(&mut self, other: &Self, _rest: &Self) {
+        fn mul_add_assign(&mut self, other: &Self, rest: &Self) {
             // Checking the modulus at compile time
             let first_bit_set = P::MODULUS.0[$limbs - 1] >> 63 != 0;
             // $limbs can be 1, hence we can run into a case with an unused mut.
@@ -92,6 +92,7 @@ macro_rules! impl_field_mul_add_assign {
                 for i in 0..$limbs {
                     r[0] = fa::mac(r[0], (self.0).0[0], (other.0).0[i], &mut carry1);
                     let k = r[0].wrapping_mul(P::INV);
+
                     fa::mac_discard(r[0], k, P::MODULUS.0[0], &mut carry2);
                     for j in 1..$limbs {
                         r[j] = mac_with_carry!(r[j], (self.0).0[j], (other.0).0[i], &mut carry1);
@@ -99,7 +100,10 @@ macro_rules! impl_field_mul_add_assign {
                     }
                     r[$limbs - 1] = carry1 + carry2;
                 }
+
                 (self.0).0 = r;
+                self.0.add_nocarry(&rest.0);
+
                 self.reduce();
             // Alternative implementation
             } else {
