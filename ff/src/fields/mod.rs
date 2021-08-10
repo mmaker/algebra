@@ -406,6 +406,18 @@ pub trait PrimeField:
         Self::Params::MODULUS_BITS as usize
     }
 
+    /// Performs multiplication and addition
+    fn mul_add_assign(&mut self, other: &Self, rest: &Self) {
+        self.mul_assign(other);
+        self.add_assign(rest);
+    }
+
+    #[inline(always)]
+    fn mul_add(mut self, other: &Self, rest: &Self) -> Self {
+        self.mul_add_assign(other, rest);
+        self
+    }
+
     /// Returns the trace.
     fn trace() -> Self::BigInt {
         Self::Params::T
@@ -644,6 +656,21 @@ mod no_std_tests {
     use super::*;
     use crate::test_field::{Fr, FrParameters};
     use ark_std::test_rng;
+
+
+    #[test]
+    fn test_mul_add() {
+        let rng = &mut test_rng();
+        let a = Fr::rand(rng);
+        let b = Fr::rand(rng);
+        let c = Fr::rand(rng);
+
+        let expected = a * b + c;
+        let mut got = a.clone();
+        got.mul_add_assign(&b, &c);
+        assert_eq!(expected, got);
+    }
+
 
     #[test]
     fn test_batch_inversion() {
