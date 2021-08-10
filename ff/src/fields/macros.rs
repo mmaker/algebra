@@ -454,7 +454,10 @@ macro_rules! impl_Fp {
             }
 
             impl_field_into_repr!($limbs, $BigIntegerType);
+            impl_field_mul_add_assign!($limbs);
         }
+
+
 
         impl<P: $FpParameters> FftField for $Fp<P> {
             type FftParams = P;

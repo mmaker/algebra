@@ -56,6 +56,60 @@ macro_rules! impl_field_mul_assign {
     };
 }
 
+
+
+macro_rules! impl_field_mul_add_assign {
+    ($limbs:expr) => {
+        #[inline]
+        #[ark_ff_asm::unroll_for_loops]
+        fn mul_add_assign(&mut self, other: &Self, _rest: &Self) {
+            // Checking the modulus at compile time
+            let first_bit_set = P::MODULUS.0[$limbs - 1] >> 63 != 0;
+            // $limbs can be 1, hence we can run into a case with an unused mut.
+            #[allow(unused_mut)]
+            let mut all_bits_set = P::MODULUS.0[$limbs - 1] == !0 - (1 << 63);
+            for i in 1..$limbs {
+                all_bits_set &= P::MODULUS.0[$limbs - i - 1] == !0u64;
+            }
+            let _no_carry: bool = !(first_bit_set || all_bits_set);
+
+            // No-carry optimisation applied to CIOS
+            if _no_carry {
+                #[cfg(use_asm)]
+                #[allow(unsafe_code, unused_mut)]
+                {
+                    // Tentatively avoid using assembly for `$limbs == 1`.
+                    if $limbs <= 6 && $limbs > 1 {
+                        ark_ff_asm::x86_64_asm_mul!($limbs, (self.0).0, (other.0).0);
+                        self.reduce();
+                        return;
+                    }
+                }
+                let mut r = [0u64; $limbs];
+                let mut carry1 = 0u64;
+                let mut carry2 = 0u64;
+
+                for i in 0..$limbs {
+                    r[0] = fa::mac(r[0], (self.0).0[0], (other.0).0[i], &mut carry1);
+                    let k = r[0].wrapping_mul(P::INV);
+                    fa::mac_discard(r[0], k, P::MODULUS.0[0], &mut carry2);
+                    for j in 1..$limbs {
+                        r[j] = mac_with_carry!(r[j], (self.0).0[j], (other.0).0[i], &mut carry1);
+                        r[j - 1] = mac_with_carry!(r[j], k, P::MODULUS.0[j], &mut carry2);
+                    }
+                    r[$limbs - 1] = carry1 + carry2;
+                }
+                (self.0).0 = r;
+                self.reduce();
+            // Alternative implementation
+            } else {
+                *self = self.mul_without_reduce(other, P::MODULUS, P::INV);
+                self.reduce();
+            }
+        }
+    };
+}
+
 macro_rules! impl_field_into_repr {
     ($limbs:expr, $BigIntegerType:ty) => {
         #[inline]
