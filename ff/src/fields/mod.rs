@@ -202,6 +202,20 @@ pub trait Field:
         }
         Some(res)
     }
+
+    /// Inplace multiplication by other and addition by rest.
+    fn mul_add_assign(&mut self, other: &Self, rest: &Self) {
+        self.mul_assign(other);
+        self.add_assign(rest);
+    }
+
+    // Returns multiplication by other and addition by rest.
+    #[inline(always)]
+    fn mul_add(mut self, other: &Self, rest: &Self) -> Self {
+        self.mul_add_assign(other, rest);
+        self
+    }
+
 }
 
 /// A trait that defines parameters for a field that can be used for FFTs.
@@ -404,18 +418,6 @@ pub trait PrimeField:
     /// Returns the field size in bits.
     fn size_in_bits() -> usize {
         Self::Params::MODULUS_BITS as usize
-    }
-
-    /// Performs multiplication and addition
-    fn mul_add_assign(&mut self, other: &Self, rest: &Self) {
-        self.mul_assign(other);
-        self.add_assign(rest);
-    }
-
-    #[inline(always)]
-    fn mul_add(mut self, other: &Self, rest: &Self) -> Self {
-        self.mul_add_assign(other, rest);
-        self
     }
 
     /// Returns the trace.
