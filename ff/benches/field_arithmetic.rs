@@ -1,7 +1,8 @@
 #[macro_use]
 extern crate criterion;
 
-use ark_ff::fields::PrimeField;
+use ark_ff::Zero;
+use ark_ff::fields::Field;
 use ark_std::{
     ops::{AddAssign, MulAssign},
     UniformRand,
@@ -20,16 +21,21 @@ fn bench_mul_add(c: &mut Criterion) {
     group.bench_function("mul+add_assign", |b| {
         b.iter(|| {
             a.mul_assign(multiplicand);
-            a.add_assign(addend)
+            a.add_assign(addend);
+            assert_ne!(a, Fr::zero())
         })
     });
     group.bench_function("raw", |b| {
         b.iter(|| {
-            black_box(black_box(black_box(a) * black_box(multiplicand)) + black_box(addend));
+            let result = a * multiplicand + addend;
+            assert_ne!(result, Fr::zero())
         })
     });
     group.bench_function("mul_add", |b| {
-        b.iter(|| a.mul_add_assign(&multiplicand, &addend))
+        b.iter(|| {
+            a.mul_add_assign(&multiplicand, &addend);
+            assert_ne!(a, Fr::zero())
+        })
     });
 }
 
