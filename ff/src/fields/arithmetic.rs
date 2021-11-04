@@ -22,16 +22,6 @@ macro_rules! impl_field_mul_assign_nocarry {
         #[inline]
         #[ark_ff_asm::unroll_for_loops]
         fn mul_assign_nocarry(&mut self, other: &Self) {
-            #[cfg(use_asm)]
-            #[allow(unsafe_code, unused_mut)]
-            {
-                // Tentatively avoid using assembly for `$limbs == 1`.
-                if $limbs <= 6 && $limbs > 1 {
-                    ark_ff_asm::x86_64_asm_mul!($limbs, (self.0).0, (other.0).0);
-                    self.reduce();
-                    return;
-                }
-            }
             let mut r = [0u64; $limbs];
             let mut carry1 = 0u64;
             let mut carry2 = 0u64;
@@ -64,6 +54,16 @@ macro_rules! impl_field_mul_assign {
         fn mul_assign(&mut self, other: &Self) {
             // No-carry optimisation applied to CIOS
             if Self::nocarry() {
+                #[cfg(use_asm)]
+                #[allow(unsafe_code, unused_mut)]
+                {
+                    // Tentatively avoid using assembly for `$limbs == 1`.
+                    if $limbs <= 6 && $limbs > 1 {
+                        ark_ff_asm::x86_64_asm_mul!($limbs, (self.0).0, (other.0).0);
+                        self.reduce();
+                        return;
+                    }
+                }
                 self.mul_assign_nocarry(other);
                 self.reduce();
             // Alternative implementation
@@ -82,6 +82,17 @@ macro_rules! impl_field_mul_add_assign {
         fn mul_add_assign(&mut self, other: &Self, rest: &Self) {
             // No-carry optimisation applied to CIOS
             if Self::nocarry() {
+                #[cfg(use_asm)]
+                #[allow(unsafe_code, unused_mut)]
+                {
+                    // Tentatively avoid using assembly for `$limbs == 1`.
+                    if $limbs <= 6 && $limbs > 1 {
+                        ark_ff_asm::x86_64_asm_mul!($limbs, (self.0).0, (other.0).0);
+                        self.0.add_nocarry(&rest.0);
+                        self.reduce();
+                        return;
+                    }
+                }
                 self.mul_assign_nocarry(other);
                 self.0.add_nocarry(&rest.0);
                 self.reduce();
