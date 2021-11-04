@@ -27,7 +27,7 @@ num-bigint = { version = "0.4", default-features = false }
 
 [dev-dependencies]
 criterion = { version = "0.3.4" }
-ark-test-curves = { version = "^0.3.0", path = "../test-curves", default-features = false, features = [ "bls12_381_scalar_field"] }
+ark-test-curves = { version = "^0.3.0", path = "../test-curves", default-features = false, features = [ "bls12_381_curve"] }
 
 [build-dependencies]
 rustc_version = "0.4"
