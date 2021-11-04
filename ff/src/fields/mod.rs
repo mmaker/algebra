@@ -215,7 +215,6 @@ pub trait Field:
         self.mul_add_assign(other, rest);
         self
     }
-
 }
 
 /// A trait that defines parameters for a field that can be used for FFTs.
@@ -659,7 +658,6 @@ mod no_std_tests {
     use crate::test_field::{Fr, FrParameters};
     use ark_std::test_rng;
 
-
     #[test]
     fn test_mul_add() {
         let rng = &mut test_rng();
@@ -672,7 +670,6 @@ mod no_std_tests {
         got.mul_add_assign(&b, &c);
         assert_eq!(expected, got);
     }
-
 
     #[test]
     fn test_batch_inversion() {

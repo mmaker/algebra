@@ -248,6 +248,9 @@ macro_rules! impl_Fp {
                     self.0.sub_noborrow(&P::MODULUS);
                 }
             }
+
+            impl_field_mul_assign_nocarry!($limbs);
+            impl_no_carry!($limbs);
         }
 
         impl<P: $FpParameters> Zero for $Fp<P> {
