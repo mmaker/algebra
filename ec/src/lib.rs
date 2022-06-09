@@ -27,7 +27,6 @@ use ark_ff::{
 use ark_serialize::{CanonicalDeserialize, CanonicalSerialize};
 use ark_std::{
     borrow::Borrow,
-    cfg_iter,
     fmt::{Debug, Display},
     hash::Hash,
     iterable::Iterable,
@@ -234,17 +233,19 @@ pub trait ProjectiveCurve:
 
     // TODO use const-generics for the scalar size and window
     // TODO use iterators of iterators of T::Affine instead of taking owned Vec
-    fn fixed_base_msm(
+    fn fixed_base_msm<I>(
         scalar_size: usize,
         window: usize,
         table: &[Vec<Self::Affine>],
-        v: &[Self::ScalarField],
-    ) -> Vec<Self> {
+        v: I ,
+    ) -> Vec<Self>
+    where I: IntoIterator,
+    I::Item:  Borrow<Self::ScalarField> {
         let outerc = (scalar_size + window - 1) / window;
         assert!(outerc <= table.len());
 
-        cfg_iter!(v)
-            .map(|e| windowed_mul::<Self>(outerc, window, table, e))
+        cfg_into_iter!(v)
+            .map(|e| windowed_mul::<Self>(outerc, window, table, e.borrow()))
             .collect::<Vec<_>>()
     }
 
