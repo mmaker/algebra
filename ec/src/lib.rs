@@ -346,19 +346,33 @@ pub trait AffineCurve:
         self.mul(Self::Parameters::COFACTOR_INV).into()
     }
 
+
     /// Optimized implementation of multi-scalar multiplication.
     ///
-    /// Will multiply the tuples of the diagonal product of `bases × scalars`
-    /// and sum the resulting set. Will iterate only for the elements of the
-    /// smallest of the two sets, ignoring the remaining elements of the biggest
-    /// set.
+    /// Will multiply the [`ScalarField::BigInt`] elements in `bigints` with the respective group elements in `bases`
+    /// and sum the resulting set.
+    /// If the elements have idfferent length, it will chop the slices to the shortest length.
+    fn variable_base_msm_bigint(
+        bases: &[Self],
+        bigints: &[<Self::ScalarField as PrimeField>::BigInt],
+    ) -> Self::Projective {
+        msm(bases, bigints)
+    }
+
+    /// Optimized implementation of multi-scalar multiplication.
     ///
-    /// ∑i (Bi · Si)
+    /// Will multiply the scalar elements in `scalars` with the respective group element in `bases`
+    /// and sum the resulting set.
+    /// If the elements have different length, it will chop the slices to the shortest length.
     fn variable_base_msm(
         bases: &[Self],
-        scalars: &[<Self::ScalarField as PrimeField>::BigInt],
+        scalars: &[Self::ScalarField],
     ) -> Self::Projective {
-        msm(bases, scalars)
+        // TODO: optimization for msm, use also negative values when performing conversion.
+        // This can buy 5-10% speedup.
+        // See <https://github.com/arkworks-rs/gemini/commit/31601710646563be2a2892c9eb691d5f9889bc0e>
+        let bigints = cfg_into_iter!(scalars).map(|s| s.into_bigint()).collect::<Vec<_>>();
+        Self::variable_base_msm_bigint(bases, &bigints)
     }
 
     /// Optimized implementation of multi-scalar multiplication.
@@ -366,9 +380,9 @@ pub trait AffineCurve:
     /// Will return `None` if `bases` and `scalar` have different lengths.
     ///
     /// Reference: [`VariableBase::msm`]
-    fn variable_base_msm_checked_len(
+    fn variable_base_msm_checked(
         bases: &[Self],
-        scalars: &[<Self::ScalarField as PrimeField>::BigInt],
+        scalars: &[Self::ScalarField],
     ) -> Option<Self::Projective> {
         (bases.len() == scalars.len()).then(|| Self::variable_base_msm(bases, scalars))
     }

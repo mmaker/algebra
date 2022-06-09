@@ -144,7 +144,7 @@ where
             .take(step)
             .map(|s| s.borrow().into_bigint())
             .collect::<Vec<_>>();
-        result.add_assign(G::variable_base_msm(
+        result.add_assign(G::variable_base_msm_bigint(
             bases_step.as_slice(),
             scalars_step.as_slice(),
         ));
