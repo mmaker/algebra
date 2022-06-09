@@ -1,7 +1,7 @@
 use ark_ff::{prelude::*, PrimeField};
 use ark_std::{borrow::Borrow, iterable::Iterable, ops::AddAssign, vec::Vec};
 
-use crate::{AffineCurve, ProjectiveCurve};
+use crate::{AffineCurve, ProjectiveCurve, VariableBaseCurve};
 
 #[cfg(feature = "parallel")]
 use rayon::prelude::*;
@@ -116,7 +116,7 @@ pub(crate) fn msm<G: AffineCurve>(
 /// size.
 pub(crate) fn msm_chunks<G, F, I: ?Sized, J>(bases_stream: &J, scalars_stream: &I) -> G::Projective
 where
-    G: AffineCurve<ScalarField = F>,
+    G: VariableBaseCurve<ScalarField = F>,
     I: Iterable,
     F: PrimeField,
     I::Item: Borrow<F>,

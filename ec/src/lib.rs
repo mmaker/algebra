@@ -237,10 +237,12 @@ pub trait ProjectiveCurve:
         scalar_size: usize,
         window: usize,
         table: &[Vec<Self::Affine>],
-        v: I ,
+        v: I,
     ) -> Vec<Self>
-    where I: IntoIterator,
-    I::Item:  Borrow<Self::ScalarField> {
+    where
+        I: IntoIterator,
+        I::Item: Borrow<Self::ScalarField>,
+    {
         let outerc = (scalar_size + window - 1) / window;
         assert!(outerc <= table.len());
 
@@ -345,62 +347,6 @@ pub trait AffineCurve:
     fn mul_by_cofactor_inv(&self) -> Self {
         self.mul(Self::Parameters::COFACTOR_INV).into()
     }
-
-
-    /// Optimized implementation of multi-scalar multiplication.
-    ///
-    /// Will multiply the [`ScalarField::BigInt`] elements in `bigints` with the respective group elements in `bases`
-    /// and sum the resulting set.
-    /// If the elements have idfferent length, it will chop the slices to the shortest length.
-    fn variable_base_msm_bigint(
-        bases: &[Self],
-        bigints: &[<Self::ScalarField as PrimeField>::BigInt],
-    ) -> Self::Projective {
-        msm(bases, bigints)
-    }
-
-    /// Optimized implementation of multi-scalar multiplication.
-    ///
-    /// Will multiply the scalar elements in `scalars` with the respective group element in `bases`
-    /// and sum the resulting set.
-    /// If the elements have different length, it will chop the slices to the shortest length.
-    fn variable_base_msm(
-        bases: &[Self],
-        scalars: &[Self::ScalarField],
-    ) -> Self::Projective {
-        // TODO: optimization for msm, use also negative values when performing conversion.
-        // This can buy 5-10% speedup.
-        // See <https://github.com/arkworks-rs/gemini/commit/31601710646563be2a2892c9eb691d5f9889bc0e>
-        let bigints = cfg_into_iter!(scalars).map(|s| s.into_bigint()).collect::<Vec<_>>();
-        Self::variable_base_msm_bigint(bases, &bigints)
-    }
-
-    /// Optimized implementation of multi-scalar multiplication.
-    ///
-    /// Will return `None` if `bases` and `scalar` have different lengths.
-    ///
-    /// Reference: [`VariableBase::msm`]
-    fn variable_base_msm_checked(
-        bases: &[Self],
-        scalars: &[Self::ScalarField],
-    ) -> Option<Self::Projective> {
-        (bases.len() == scalars.len()).then(|| Self::variable_base_msm(bases, scalars))
-    }
-
-    fn variable_base_msm_chunks<G, F, I: ?Sized, J>(
-        bases_stream: &J,
-        scalars_stream: &I,
-    ) -> G::Projective
-    where
-        G: AffineCurve<ScalarField = F>,
-        I: Iterable,
-        F: PrimeField,
-        I::Item: Borrow<F>,
-        J: Iterable,
-        J::Item: Borrow<G>,
-    {
-        msm_chunks(bases_stream, scalars_stream)
-    }
 }
 
 impl<C: ProjectiveCurve> crate::group::Group for C {
@@ -462,4 +408,62 @@ pub trait PairingFriendlyCycle: CurveCycle {
         Fq = <Self::E2 as AffineCurve>::BaseField,
         Fr = <Self::E2 as AffineCurve>::ScalarField,
     >;
+}
+
+pub trait VariableBaseCurve: AffineCurve {
+    /// Optimized implementation of multi-scalar multiplication.
+    ///
+    /// Will multiply the [`ScalarField::BigInt`] elements in `bigints` with the
+    /// respective group elements in `bases` and sum the resulting set.
+    /// If the elements have idfferent length, it will chop the slices to the
+    /// shortest length.
+    fn variable_base_msm_bigint(
+        bases: &[Self],
+        bigints: &[<Self::ScalarField as PrimeField>::BigInt],
+    ) -> Self::Projective {
+        msm(bases, bigints)
+    }
+
+    /// Optimized implementation of multi-scalar multiplication.
+    ///
+    /// Will multiply the scalar elements in `scalars` with the respective group
+    /// element in `bases` and sum the resulting set.
+    /// If the elements have different length, it will chop the slices to the
+    /// shortest length.
+    fn variable_base_msm(bases: &[Self], scalars: &[Self::ScalarField]) -> Self::Projective {
+        // TODO: optimization for msm, use also negative values when performing
+        // conversion. This can buy 5-10% speedup.
+        // See <https://github.com/arkworks-rs/gemini/commit/31601710646563be2a2892c9eb691d5f9889bc0e>
+        let bigints = cfg_into_iter!(scalars)
+            .map(|s| s.into_bigint())
+            .collect::<Vec<_>>();
+        Self::variable_base_msm_bigint(bases, &bigints)
+    }
+
+    /// Optimized implementation of multi-scalar multiplication.
+    ///
+    /// Will return `None` if `bases` and `scalar` have different lengths.
+    ///
+    /// Reference: [`VariableBase::msm`]
+    fn variable_base_msm_checked(
+        bases: &[Self],
+        scalars: &[Self::ScalarField],
+    ) -> Option<Self::Projective> {
+        (bases.len() == scalars.len()).then(|| Self::variable_base_msm(bases, scalars))
+    }
+
+    fn variable_base_msm_chunks<G, F, I: ?Sized, J>(
+        bases_stream: &J,
+        scalars_stream: &I,
+    ) -> G::Projective
+    where
+        G: VariableBaseCurve<ScalarField = F>,
+        I: Iterable,
+        F: PrimeField,
+        I::Item: Borrow<F>,
+        J: Iterable,
+        J::Item: Borrow<G>,
+    {
+        msm_chunks(bases_stream, scalars_stream)
+    }
 }

@@ -1,6 +1,6 @@
 use ark_ec::{
     msm::{ChunkedPippenger, HashMapPippenger},
-    AffineCurve, ProjectiveCurve,
+    AffineCurve, ProjectiveCurve, VariableBaseCurve,
 };
 use ark_ff::{PrimeField, UniformRand, Zero};
 
@@ -16,7 +16,7 @@ fn naive_var_base_msm<G: AffineCurve>(
     acc
 }
 
-pub fn test_var_base_msm<G: AffineCurve>() {
+pub fn test_var_base_msm<G: VariableBaseCurve>() {
     const SAMPLES: usize = 1 << 10;
 
     let mut rng = ark_std::test_rng();
@@ -35,7 +35,7 @@ pub fn test_var_base_msm<G: AffineCurve>() {
     assert_eq!(naive.into_affine(), fast.into_affine());
 }
 
-pub fn test_chunked_pippenger<G: AffineCurve>() {
+pub fn test_chunked_pippenger<G: VariableBaseCurve>() {
     const SAMPLES: usize = 1 << 10;
 
     let mut rng = ark_std::test_rng();
@@ -58,7 +58,7 @@ pub fn test_chunked_pippenger<G: AffineCurve>() {
     assert_eq!(arkworks.into_affine(), mine.into_affine());
 }
 
-pub fn test_hashmap_pippenger<G: AffineCurve>() {
+pub fn test_hashmap_pippenger<G: VariableBaseCurve>() {
     const SAMPLES: usize = 1 << 10;
 
     let mut rng = ark_std::test_rng();

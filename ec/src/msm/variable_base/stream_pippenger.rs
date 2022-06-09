@@ -1,19 +1,19 @@
 //! A space-efficient implementation of Pippenger's algorithm.
-use crate::AffineCurve;
+use crate::VariableBaseCurve;
 use ark_ff::{PrimeField, Zero};
 
 use ark_std::{borrow::Borrow, ops::AddAssign, vec::Vec};
 use hashbrown::HashMap;
 
 /// Struct for the chunked Pippenger algorithm.
-pub struct ChunkedPippenger<G: AffineCurve> {
+pub struct ChunkedPippenger<G: VariableBaseCurve> {
     scalars_buffer: Vec<<G::ScalarField as PrimeField>::BigInt>,
     bases_buffer: Vec<G>,
     result: G::Projective,
     buf_size: usize,
 }
 
-impl<G: AffineCurve> ChunkedPippenger<G> {
+impl<G: VariableBaseCurve> ChunkedPippenger<G> {
     /// Initialize a chunked Pippenger instance with default parameters.
     pub fn new(max_msm_buffer: usize) -> Self {
         Self {
@@ -67,13 +67,13 @@ impl<G: AffineCurve> ChunkedPippenger<G> {
 }
 
 /// Hash map struct for Pippenger algorithm.
-pub struct HashMapPippenger<G: AffineCurve> {
+pub struct HashMapPippenger<G: VariableBaseCurve> {
     buffer: HashMap<G, G::ScalarField>,
     result: G::Projective,
     buf_size: usize,
 }
 
-impl<G: AffineCurve> HashMapPippenger<G> {
+impl<G: VariableBaseCurve> HashMapPippenger<G> {
     /// Produce a new hash map with the maximum msm buffer size.
     pub fn new(max_msm_buffer: usize) -> Self {
         Self {
