@@ -7,7 +7,7 @@ use ark_std::{
     fmt::{Display, Formatter, Result as FmtResult},
     hash::{Hash, Hasher},
     io::{Read, Write},
-    ops::{Add, AddAssign, MulAssign, Neg, Sub, SubAssign},
+    ops::{Add, AddAssign, Mul, MulAssign, Neg, Sub, SubAssign},
     rand::{
         distributions::{Distribution, Standard},
         Rng,
@@ -17,7 +17,7 @@ use ark_std::{
 use num_traits::{One, Zero};
 use zeroize::Zeroize;
 
-use ark_ff::{fields::Field, ToConstraintField, UniformRand};
+use ark_ff::{fields::Field, ToConstraintField, UniformRand, PrimeField};
 
 #[cfg(feature = "parallel")]
 use rayon::prelude::*;
@@ -412,6 +412,22 @@ impl<P: TECurveConfig> Distribution<Projective<P>> for Standard {
     }
 }
 
+impl<'a, P: TECurveConfig> Mul<&'a P::ScalarField> for Projective<P> {
+    type Output = Self;
+
+    fn mul(self, rhs: &'a P::ScalarField) -> Self::Output {
+        self.mul_bigint(rhs.into_bigint())
+    }
+}
+
+// impl<P: TECurveConfig> Mul<P::ScalarField> for Projective<P> {
+//     type Output = Self;
+
+//     fn mul(self, rhs: P::ScalarField) -> Self::Output {
+//         self.mul_bigint(rhs.into_bigint())
+//     }
+// }
+
 impl<P: TECurveConfig> Default for Projective<P> {
     #[inline]
     fn default() -> Self {
@@ -654,7 +670,7 @@ impl<'a, P: TECurveConfig> SubAssign<&'a Self> for Projective<P> {
 
 impl<P: TECurveConfig> MulAssign<P::ScalarField> for Projective<P> {
     fn mul_assign(&mut self, other: P::ScalarField) {
-        *self = self.mul(&other)
+        *self = *self * &other
     }
 }
 

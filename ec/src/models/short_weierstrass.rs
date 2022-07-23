@@ -6,11 +6,11 @@ use ark_std::{
     fmt::{Display, Formatter, Result as FmtResult},
     hash::{Hash, Hasher},
     io::{Read, Write},
-    ops::{Add, AddAssign, MulAssign, Neg, Sub, SubAssign},
+    ops::{Add, AddAssign, Mul, MulAssign, Neg, Sub, SubAssign},
     vec::Vec,
 };
 
-use ark_ff::{fields::Field, ToConstraintField, UniformRand};
+use ark_ff::{fields::Field, ToConstraintField, UniformRand, PrimeField};
 
 use crate::{msm::VariableBaseMSM, AffineCurve, ProjectiveCurve};
 
@@ -399,6 +399,22 @@ impl<P: SWCurveConfig> Display for Projective<P> {
         write!(f, "{}", Affine::from(*self))
     }
 }
+
+impl<'a, P: SWCurveConfig> Mul<&'a P::ScalarField> for Projective<P> {
+    type Output = Self;
+
+    fn mul(self, rhs: &'a P::ScalarField) -> Self {
+        self.mul_bigint(rhs.into_bigint())
+    }
+}
+
+// impl<P: SWCurveConfig> Mul<P::ScalarField> for Projective<P> {
+//     type Output = Self;
+
+//     fn mul(self, rhs: P::ScalarField) -> Self {
+//         self.mul_bigint(rhs.into_bigint())
+//     }
+// }
 
 impl<P: SWCurveConfig> Eq for Projective<P> {}
 impl<P: SWCurveConfig> PartialEq for Projective<P> {
@@ -795,7 +811,7 @@ impl<'a, P: SWCurveConfig> SubAssign<&'a Self> for Projective<P> {
 
 impl<P: SWCurveConfig> MulAssign<P::ScalarField> for Projective<P> {
     fn mul_assign(&mut self, other: P::ScalarField) {
-        *self = self.mul(&other)
+        *self = *self * &other
     }
 }
 

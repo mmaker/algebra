@@ -27,7 +27,7 @@ use ark_serialize::{CanonicalDeserialize, CanonicalSerialize};
 use ark_std::{
     fmt::{Debug, Display},
     hash::Hash,
-    ops::{Add, AddAssign, MulAssign, Neg, Sub, SubAssign},
+    ops::{Add, AddAssign, Mul, MulAssign, Neg, Sub, SubAssign},
     vec::Vec,
 };
 use msm::VariableBaseMSM;
@@ -149,8 +149,10 @@ pub trait ProjectiveCurve:
     + Neg<Output = Self>
     + Add<Self, Output = Self>
     + Sub<Self, Output = Self>
+    // + Mul<Self::ScalarField, Output = Self>
     + AddAssign<Self>
     + SubAssign<Self>
+    + for<'a> Mul<&'a Self::ScalarField, Output = Self>
     + MulAssign<<Self as ProjectiveCurve>::ScalarField>
     + for<'a> Add<&'a Self, Output = Self>
     + for<'a> Sub<&'a Self, Output = Self>
@@ -218,10 +220,6 @@ pub trait ProjectiveCurve:
     /// Sets `self` to be `self + other`, where `other: Self::Affine`.
     /// This is usually faster than adding `other` in projective form.
     fn add_assign_mixed(&mut self, other: &Self::Affine);
-
-    fn mul(self, by: &Self::ScalarField) -> Self {
-        self.mul_bigint(by.into_bigint())
-    }
 
     /// Performs scalar multiplication of this element.
     fn mul_bigint<S: AsRef<[u64]>>(self, other: S) -> Self;
